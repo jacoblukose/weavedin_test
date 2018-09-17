@@ -1,0 +1,20 @@
+{	
+	"general" : 
+		{
+			"loglevel"   : "INFO"
+		},
+ 
+	"mysql" :   
+		{
+		 	"host" : "localhost",
+			"user" : "root",
+			"password" : "helloworld"
+		},
+
+	"server" :
+		{
+			"host" : "localhost"
+		}
+
+}
+
