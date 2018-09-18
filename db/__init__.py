@@ -21,20 +21,20 @@ class DatabaseConnection(object):
         # make sure the dbconnection gets closed
         self.conn.close()
 
-    def getEngine(self):
-        return self.engine
 
 
-class DatabaseSession:
+class DatabaseSession(object):
+
+    def __init__(self, engine):
+        self.engine = engine
 
     def __enter__(self):
-        self.session = Session(engine)
+        self.session = Session(self.engine)
 
         # NB: following line is not needed if instances of SQL entities are replaced with other classes,
         # before passing results to business logic and above layers (which is recommended!)
         # Here for simplicity, data access layer entities are passed above to business logic;
         self.session.expire_on_commit = False
-
         return self.session
 
     def __exit__(self, exc_type, exc_val, exc_tb):

@@ -39,17 +39,20 @@ class Initialise(object):
 	"""
 	def __init__(self,conf):
 
-		#Initialise web server object
-		self.ws = ws()
-		self.ws.ws_url = UtilityTools().KeylookUP(CONF["server"]["host"])
-
 		#Initialise database object
 		user = UtilityTools().KeylookUP(CONF["mysql"]["user"])
 		password = UtilityTools().KeylookUP(CONF["mysql"]["password"])
 		host = UtilityTools().KeylookUP(CONF["mysql"]["host"])
 		dbname = UtilityTools().KeylookUP(CONF["mysql"]["dbname"])
 		self.db = mysql(host, user, password, dbname)
-		# self.db.getdata()
+
+		#Initialise web server object
+		self.ws = ws(self.db)
+
+		self.ws.ws_url = UtilityTools().KeylookUP(CONF["server"]["host"])
+
+
+
 
 
 if __name__ == "__main__":
@@ -89,6 +92,15 @@ if __name__ == "__main__":
 		def change_history():
 			return chief.ws.change_history()
 
+
+		@app.route('/api/v1/additem',methods=['POST'])
+		def add_item():
+			data = {}
+			for key,val in request.form.iteritems():
+				data[key] = val
+			return chief.ws.add_item(data)
+
+
 		@app.route('/api/v1/edititem',methods=['POST'])
 		def edit_item():
 			data = {}
@@ -118,7 +130,7 @@ if __name__ == "__main__":
 				data[key] = val
 			return chief.ws.del_variant(data)
 
-		app.debug = True
+		app.debug = False
 		app.run(host=chief.ws.ws_url, threaded=True)
 
 
