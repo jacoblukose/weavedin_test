@@ -4,6 +4,7 @@ import sys
 from argparse import ArgumentParser
 from utility import UtilityTools 
 from flask import render_template,request,Flask,json
+
 from webserver.new import Webserver as ws 
 from db.new import Mysql as mysql
 
@@ -24,9 +25,7 @@ class GracefulController(object):
 		return self.chief
 
 	def sigint_handler(self, signal, frame):
-		""" 
-			Handle signals from kernel 
-		"""
+		# Handle signals from kernel 
 		logging.info("signal captured %s %s", signal, frame)
 		sys.exit(0)
 
@@ -35,8 +34,9 @@ class GracefulController(object):
 
 
 class Initialise(object):
-
-	
+	"""
+	Class initialises various modules. 
+	"""
 	def __init__(self,conf):
 
 		#Initialise web server object
@@ -44,8 +44,12 @@ class Initialise(object):
 		self.ws.ws_url = UtilityTools().KeylookUP(CONF["server"]["host"])
 
 		#Initialise database object
-		self.db = mysql()
-
+		user = UtilityTools().KeylookUP(CONF["mysql"]["user"])
+		password = UtilityTools().KeylookUP(CONF["mysql"]["password"])
+		host = UtilityTools().KeylookUP(CONF["mysql"]["host"])
+		dbname = UtilityTools().KeylookUP(CONF["mysql"]["dbname"])
+		self.db = mysql(host, user, password, dbname)
+		# self.db.getdata()
 
 
 if __name__ == "__main__":
@@ -66,6 +70,7 @@ if __name__ == "__main__":
 	
 	if ARGS.cli_loglevel is not None:
 		LOG_LEVEL = ARGS.cli_loglevel
+
 	logging.root.handlers = []
 	logging.basicConfig(level = LOG_LEVEL, 
 					format='%(asctime)s %(name)s.%(funcName)s +%(lineno)s:%(levelname)-8s  %(message)s',
@@ -76,14 +81,54 @@ if __name__ == "__main__":
 	with GracefulController(CONF) as chief:
 		app = Flask(__name__, static_folder='static')
 
-		@app.route('/status',methods=['GET'])
+		@app.route('/api/v1/status',methods=['GET'])
 		def status():
 			return chief.ws.status_check()
 		
-		@app.route('/changehistory',methods=['GET','POST'])
+		@app.route('/api/v1/changehistory',methods=['POST'])
 		def change_history():
 			return chief.ws.change_history()
 
+		@app.route('/api/v1/edititem',methods=['POST'])
+		def edit_item():
+			data = {}
+			for key,val in request.form.iteritems():
+				data[key] = val
+			return chief.ws.edit_item(data)
+
+		@app.route('/api/v1/editvariant',methods=['POST'])
+		def edit_variant():
+			data = {}
+			for key,val in request.form.iteritems():
+				data[key] = val
+			print data
+			return chief.ws.edit_variant(data)
+
+		@app.route('/api/v1/addvariant',methods=['POST'])
+		def add_variant():
+			data = {}
+			for key,val in request.form.iteritems():
+				data[key] = val
+			return chief.ws.add_variant(data)
+
+		@app.route('/api/v1/delvariant',methods=['POST'])
+		def del_variant():
+			data = {}
+			for key,val in request.form.iteritems():
+				data[key] = val
+			return chief.ws.del_variant(data)
+
 		app.debug = True
 		app.run(host=chief.ws.ws_url, threaded=True)
+
+
+
+
+
+
+
+
+
+
+
 

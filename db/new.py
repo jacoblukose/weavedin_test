@@ -1,19 +1,37 @@
 from sqlalchemy import *
 import logging
+from sqlalchemy.orm import Session
+from db import DatabaseConnection
+from entities import EntityConstructor
 
 
 class Mysql(): 
+	"""
+	Class implemenets mysql functions.
+	"""
 
-	def __init__(self):
-		self.url = 'mysql+pymysql://root:helloworld@localhost:3306/sample_db?charset=utf8&use_unicode=0'
-		engine = create_engine(self.url, pool_recycle=3600)
-		try:
-			connection = engine.connect()
-		except Exception, error_info:
-			logging.error("Mysql not initialised \n ERROR : %s", error_info)
-			raise
+	def __init__(self, host, user, password, dbname):
+
+		self.host = host
+		self.user = user
+		self.password = password
+		self.dbname = dbname
+		self.url = "mysql+pymysql://" + self.user + ":"	+ self.password + "@" + self.host + "/" + self.dbname + "?charset=utf8&use_unicode=0"
+		
+		with DatabaseConnection(self.url) as db:
+			self.dbconn , self.engine = db[0], db[1]
+		
 		logging.info("Mysql Instance created")
+
+		self.en = EntityConstructor(self.engine)
+		self.en.create()
+
+		logging.info("DB instances created")
 		return 
 
-	def status(self):
-		pass 
+
+	def getdata(self):
+		result = self.engine.execute("select name from tablename")
+		for row in result:
+			print "name:", row['name']
+		result.close()

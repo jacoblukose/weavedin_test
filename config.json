@@ -3,18 +3,18 @@
 		{
 			"loglevel"   : "INFO"
 		},
- 
-	"mysql" :   
-		{
-		 	"host" : "localhost",
-			"user" : "root",
-			"password" : "helloworld"
-		},
 
 	"server" :
 		{
 			"host" : "localhost"
-		}
+		},
 
+	"mysql" :   
+		{
+		 	"host" : "localhost",
+			"user" : "root",
+			"password" : "helloworld",
+			"dbname" : "sample_db"
+		}
 }
 
