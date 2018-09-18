@@ -93,7 +93,7 @@ if __name__ == "__main__":
 			return chief.ws.change_history()
 
 
-		@app.route('/api/v1/additem',methods=['POST'])
+		@app.route('/api/v1/item/add',methods=['POST'])
 		def add_item():
 			data = {}
 			for key,val in request.form.iteritems():
@@ -101,29 +101,28 @@ if __name__ == "__main__":
 			return chief.ws.add_item(data)
 
 
-		@app.route('/api/v1/edititem',methods=['POST'])
+		@app.route('/api/v1/item/edit',methods=['POST'])
 		def edit_item():
 			data = {}
 			for key,val in request.form.iteritems():
 				data[key] = val
 			return chief.ws.edit_item(data)
 
-		@app.route('/api/v1/editvariant',methods=['POST'])
+		@app.route('/api/v1/variant/edit',methods=['POST'])
 		def edit_variant():
 			data = {}
 			for key,val in request.form.iteritems():
 				data[key] = val
-			print data
 			return chief.ws.edit_variant(data)
 
-		@app.route('/api/v1/addvariant',methods=['POST'])
+		@app.route('/api/v1/variant/add',methods=['POST'])
 		def add_variant():
 			data = {}
 			for key,val in request.form.iteritems():
 				data[key] = val
 			return chief.ws.add_variant(data)
 
-		@app.route('/api/v1/delvariant',methods=['POST'])
+		@app.route('/api/v1/variant/del',methods=['POST'])
 		def del_variant():
 			data = {}
 			for key,val in request.form.iteritems():

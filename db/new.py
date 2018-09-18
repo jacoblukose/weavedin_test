@@ -41,11 +41,13 @@ class Mysql():
 
 
 	def changehistoryDB(self, data):
+		logging.info("changehistoryDB")
 		with DatabaseSession(self.engine) as session:
 			pass 
-			
+
 
 	def addItemDB(self, data):
+		logging.info("addItemDB")
 		with DatabaseSession(self.engine) as session:
 			instance = Item( name = data['name'],
 							 brand = data['brand'],
@@ -58,14 +60,26 @@ class Mysql():
 			session.commit()
 
 	def editItemDB(self, data):
+		logging.info("editItemDB")
 		with DatabaseSession(self.engine) as session:
-			pass 		
+			item_data = session.query(Item).get(data['productcode'])
+			if item_data == None:
+				return False
+			else:
+				item_data.name = data["name"]
+				item_data.brand = data["brand"]
+				item_data.category = data["category"]
+				item_data.productCode = data["productcode"]
+				session.add(item_data)
+				session.commit()
+				return True	
 
 
 	def addVariantDB(self, data):
+		logging.info("addVariantDB")
 		with DatabaseSession(self.engine) as session:
 
-			var_code = md5(str(localtime()) + data['itemid']  + data['name'] + str(uniform(1, 1000)) ).hexdigest()
+			var_code = md5( data['itemid']  + data['name']  ).hexdigest()
 			properties = json.loads(data['properties'])
 			instance = Variant( 
 								var_code = var_code,
@@ -93,12 +107,42 @@ class Mysql():
 			session.commit()
 
 	def editVariantDB(self, data):
+		logging.info("editVariantDB")
 		with DatabaseSession(self.engine) as session:
-			pass 	
+			variant_code = md5( data['itemid']  + data['name']  ).hexdigest()
+			variant_data = session.query(Variant).get(variant_code)
+			if variant_data == None:
+				return False
+			else:
+				properties = json.loads(data['properties'])
+				variant_data.name = data["name"]
+				variant_data.sellingPrice = data["sellingprice"]
+				variant_data.costPrice = data["costprice"]
+				variant_data.quantity = data["quantity"]
+
+				session.add(variant_data)
+				session.flush()
+				session.commit()
+				session.query(Property).filter(Property.variant_code==variant_code).update({ "size":properties['size'],
+										"cloth": properties['cloth'] }, 
+										synchronize_session='fetch')
+				session.commit()
+				return True     
+	
 
 	def delVariantDB(self, data):
+		logging.info("delVariantDB")
 		with DatabaseSession(self.engine) as session:
-			pass 
+				variant_code = md5(data['itemid']  + data['name']).hexdigest()
+				variant_data = session.query(Variant).get(variant_code)
+				if variant_data == None:
+					return False
+				else:
+					session.query(Property).filter(Property.variant_code==variant_code).delete(synchronize_session='fetch')
+					session.delete(variant_data)
+					session.commit()
+					return True
+
 
 
 
