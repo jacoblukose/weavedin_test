@@ -28,7 +28,6 @@ class Item(Base):
                        primary_key = True,
                        default="abcd")
         
-        user=Column(String(50),nullable = False)
         created_date = Column(DateTime(), default=datetime.now)
         updated_date  = Column(DateTime(), default=datetime.now, 
                                onupdate=datetime.now)
@@ -51,7 +50,6 @@ class Variant(Base):
         costPrice = Column(Float,nullable = False)
         quantity = Column(Integer, nullable = False)
         
-        user=Column(String(50),nullable = False)
         created_date = Column(DateTime(), default=datetime.now)
         updated_date  = Column(DateTime(), default=datetime.now, 
                                onupdate=datetime.now)

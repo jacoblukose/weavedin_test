@@ -20,18 +20,19 @@ class Webserver():
 		return resp
 
 
-	def activity_log(self, data):
+	def activity_log(self, user, stime, etime):
 		temp = {}
-		for key,val in data.iteritems():
-				temp[key] = val
-
+		temp["user"] = user
+		temp["start_time"] = stime
+		temp["end_time"] = etime
+ 
 		result = self.db.activitylogDB(temp)
 		if result:
 			js = json.dumps(result)
 			resp = Response(js, status=200, mimetype='application/json')
 			return resp
 		else: 
-			js = json.dumps({"ACTIVITY_LOG": "FAILED"})
+			js = json.dumps({"ACTIVITY_LOG": "EMPTY"})
 			resp = Response(js, status=421, mimetype='application/json')
 			return resp
 
@@ -44,11 +45,17 @@ class Webserver():
 			js = json.dumps({"ADD_ITEM": "SUCCESS"})
 			resp = Response(js, status=200, mimetype='application/json')
 			return resp
+		else:
+			js = json.dumps({"ADD_ITEM": "ITEM ALREADY EXISTS"})
+			resp = Response(js, status=409, mimetype='application/json')
+			return resp
 
 
 
-	def edit_item(self, data):
+
+	def edit_item(self, data, item_product_code):
 		temp = {}
+		temp["productcode"] = item_product_code
 		for key,val in data.iteritems():
 				temp[key] = val
 		if self.db.editItemDB(temp):
@@ -57,8 +64,11 @@ class Webserver():
 			return resp
 
 
-	def edit_variant(self, data):
+
+	def edit_variant(self, item_product_code, variant_name, data):
 		temp = {}
+		temp['name'] = variant_name
+		temp['itemid'] = item_product_code
 		for key,val in data.iteritems():
 				temp[key] = val
 		if self.db.editVariantDB(temp):
@@ -67,13 +77,18 @@ class Webserver():
 			return resp		
 
 
-	def add_variant(self, data):
+	def add_variant(self, item_product_code, data):
 		temp = {}
+		temp['itemid'] = item_product_code
 		for key,val in data.iteritems():
 				temp[key] = val
 		if self.db.addVariantDB(temp):
 			js = json.dumps({"ADD_VARIANT": "SUCCESS"})
 			resp = Response(js, status=200, mimetype='application/json')
+			return resp	
+		else:
+			js = json.dumps({"ADD_VARIANT": "VARIANT ALREADY EXISTS"})
+			resp = Response(js, status=409, mimetype='application/json')
 			return resp	
 
 
@@ -85,6 +100,11 @@ class Webserver():
 			js = json.dumps({"DEL_VARIANT": "SUCCESS"})
 			resp = Response(js, status=200, mimetype='application/json')
 			return resp	
+		else:
+			js = json.dumps({"DEL_VARIANT": "VARIANT ALREADY DELETED"})
+			resp = Response(js, status=409, mimetype='application/json')
+			return resp	
+
 
 
 

@@ -88,31 +88,36 @@ if __name__ == "__main__":
 		def status():
 			return chief.ws.status_check()
 		
-		@app.route('/api/v1/changehistory',methods=['PUT'])
-		def change_history():
-			return chief.ws.activity_log(request.form)
+		@app.route('/api/v1/activity',
+							 defaults={'user': None}, methods=['GET'])
+		@app.route('/api/v1/activity/<string:user>',methods=['GET'])
+		def change_history(user):
+			stime = request.args.get('stime')
+			etime = request.args.get('etime')
+			return chief.ws.activity_log(user, stime, etime)
 
-		@app.route('/api/v1/item/add',methods=['POST'])
+		@app.route('/api/v1/item',methods=['POST'])
 		def add_item():
 			return chief.ws.add_item(request.form)
 
-		@app.route('/api/v1/item/edit',methods=['PUT'])
-		def edit_item():
-			return chief.ws.edit_item(request.form)
+		@app.route('/api/v1/item/<string:item_id>',methods=['PUT'])
+		def edit_item(item_id):
+			return chief.ws.edit_item(request.form, item_id)
 
-		@app.route('/api/v1/variant/edit',methods=['PUT'])
-		def edit_variant():
-			return chief.ws.edit_variant(request.form)
+		@app.route('/api/v1/item/<string:item_id>/variant/<string:variant_id>',
+			    			 methods=['PUT'])
+		def edit_variant(item_id, variant_id):
+			return chief.ws.edit_variant(item_id, variant_id, request.form)
 
-		@app.route('/api/v1/variant/add',methods=['POST'])
-		def add_variant():
-			return chief.ws.add_variant(request.form)
+		@app.route('/api/v1/item/<string:item_id>/variant',methods=['POST'])
+		def add_variant(item_id):
+			return chief.ws.add_variant(item_id, request.form)
 
 		@app.route('/api/v1/variant/del',methods=['POST'])
 		def del_variant():
 			return chief.ws.del_variant(request.form)
 
-		app.debug = False
+		app.debug = True
 		app.run(host=chief.ws.ws_url, threaded=True)
 
 

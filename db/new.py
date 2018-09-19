@@ -7,7 +7,7 @@ from sqlalchemy import *
 from time import localtime
 from datetime import datetime
 from sqlalchemy.orm import Session
-
+from sqlalchemy import exc
 
 from db import DatabaseConnection, DatabaseSession
 from entities import EntityConstructor, Item, Variant, Property, Changelog
@@ -45,9 +45,8 @@ class Mysql():
 									time.localtime())
 		total = {}
 		result = None
-		print time, current_time
 
-		if "user" in data:
+		if data["user"] is not None:
 			result = self.engine.execute("select * from changelog where created_date > %s AND created_date < %s AND user = %s" , 
 																					start_time, end_time, data["user"])
 		else:
@@ -76,15 +75,12 @@ class Mysql():
 			instance = Item( name = data['name'],
 							 brand = data['brand'],
 							 category = data['category'],
-							 productCode = data['productcode'],
-							 user = "dummy"
+							 productCode = data['productcode']
 							 )
-			session.add(instance)
-			session.flush()
-			session.commit()
+			
 
 			changelog = Changelog( mode = "ADD",
-								   user = "dummy",
+								   user = data['user'],
 								   item_category = True,
 								   item_data = json.dumps({"productcode" : data['productcode']})
 								   )
@@ -92,14 +88,23 @@ class Mysql():
 			session.flush()
 			session.commit()
 			logging.debug("Wrote activity log for addItem")
-			return True
+							
+			try:			 
+				session.add(instance)
+				session.flush()
+				session.commit()
+				return True
+			except exc.IntegrityError as e:
+				logging.error('Integrity Error Exception when addITEM : \n %s',e )
+				session.rollback()
+				return False
+
 		return False
 
 	def editItemDB(self, data):
 		logging.info("editItemDB")
 		with DatabaseSession(self.engine) as session:
 			item_data = session.query(Item).get(data['productcode'])
-			print item_data.name
 			if item_data == None:
 				return False
 			else:
@@ -124,7 +129,7 @@ class Mysql():
 					temp["productcode"] = data["productcode"]
 
 					changelog = Changelog( mode = "EDIT",
-										   user = "dummy",
+										   user = data['user'],
 										   item_category = True,
 										   item_data = json.dumps(temp)
 										)
@@ -149,15 +154,31 @@ class Mysql():
 								sellingPrice = data['sellingprice'],
 								costPrice = data['costprice'],
 								quantity = data['quantity'],
-								user = "dummy",
 								item_id = data["itemid"]
 								)
 
-			
-
-			session.add(instance)
+			changelog = Changelog( mode = "ADD",
+					   user = data['user'],
+					   item_category = True,
+					   variants_category = True,
+					   item_data = json.dumps({"productcode" : data['itemid']}),
+					   variants_data = json.dumps({"variant_code" : var_code,
+												   "variant_name" : data['name']})
+					  )
+			session.add(changelog)
 			session.flush()
 			session.commit()
+			logging.debug("Wrote activity log for addVariant")
+
+			
+			try:
+				session.add(instance)
+				session.flush()
+				session.commit()
+			except exc.IntegrityError as e:
+				logging.error('Integrity Error Exception when addITEM : \n %s',e )
+				session.rollback()
+				return False
 
 			properties = Property( cloth = properties['cloth'],
 								   size = properties['size'] ,
@@ -169,18 +190,7 @@ class Mysql():
 			session.commit()
 
 
-			changelog = Changelog( mode = "ADD",
-								   user = "dummy",
-								   item_category = True,
-								   variants_category = True,
-								   item_data = json.dumps({"productcode" : data['itemid']}),
-								   variants_data = json.dumps({"variant_code" : var_code,
-															   "variant_name" : data['name']})
-								  )
-			session.add(changelog)
-			session.flush()
-			session.commit()
-			logging.debug("Wrote activity log for addVariant")
+
 			return True
 		return False
 
@@ -230,7 +240,7 @@ class Mysql():
 	
 					temp["variant_code"] = variant_code
 					changelog = Changelog( mode = "EDIT",
-										   user = "dummy",
+										   user = data['user'],
 										   item_category = True,
 										   variants_category = True,
 										   item_data = json.dumps({"productcode" : data['itemid']}),
@@ -253,12 +263,15 @@ class Mysql():
 				if variant_data == None:
 					return False
 				else:
-					session.query(Property).filter(Property.variant_code==variant_code).delete(synchronize_session='fetch')
-					session.delete(variant_data)
-					session.commit()
+					try:
+						session.query(Property).filter(Property.variant_code==variant_code).delete(synchronize_session='fetch')
+						session.delete(variant_data)
+						session.commit()
+					except Exception as e:
+						session.rollback()
 
 					changelog = Changelog( mode = "DEL",
-										   user = "dummy",
+										   user = data['user'],
 										   variants_category = True,
 										   item_category = True,
 										   item_data = json.dumps({"productcode" : data['itemid']}),
