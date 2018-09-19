@@ -13,17 +13,6 @@ from db import DatabaseConnection, DatabaseSession
 from entities import EntityConstructor, Item, Variant, Property, Changelog
 
 
-
-# def track_activity(func):
-#   """ Prints name of the function in which decorator is used. """
-#   print "inside track_activity"
-#   def details(*v, **k):
-#     logging.info("Running [" + func.__name__ + "()] function")
-#     return func(*v, **k)
-#   return details
-
-
-
 class Mysql(): 
 	"""
 	Class implemenets mysql functions.
@@ -48,15 +37,23 @@ class Mysql():
 		logging.info("DB schema created")
 		return 
 
-	def changehistoryDB(self, data):
+	def activitylogDB(self, data):
 		logging.info("changehistoryDB")
-		time_data = data['time']
+		start_time = data['start_time']
+		end_time = data['end_time']
 		current_time = time.strftime(r'%Y-%m-%d %H:%M:%S', 
 									time.localtime())
-
 		total = {}
+		result = None
 		print time, current_time
-		result = self.engine.execute("select * from changelog where created_date < %s" , current_time)
+
+		if "user" in data:
+			result = self.engine.execute("select * from changelog where created_date > %s AND created_date < %s AND user = %s" , 
+																					start_time, end_time, data["user"])
+		else:
+			result = self.engine.execute("select * from changelog where created_date > %s AND created_date < %s" , 
+																					start_time, end_time)
+		
 		for index,row in enumerate(result):
 			result_data = {}
 			result_data["id"] = row[0]
@@ -69,10 +66,8 @@ class Mysql():
 			result_data["item_data"] = row[7]			
 			result_data["variants_data "] = row[8]	
 			result_data["properties_data"] = row[9]	
-
 			total[index] = result_data
 		result.close()
-		print total
 		return total
 
 	def addItemDB(self, data):
@@ -96,21 +91,50 @@ class Mysql():
 			session.add(changelog)
 			session.flush()
 			session.commit()
+			logging.debug("Wrote activity log for addItem")
+			return True
+		return False
 
 	def editItemDB(self, data):
 		logging.info("editItemDB")
 		with DatabaseSession(self.engine) as session:
 			item_data = session.query(Item).get(data['productcode'])
+			print item_data.name
 			if item_data == None:
 				return False
 			else:
-				item_data.name = data["name"]
-				item_data.brand = data["brand"]
-				item_data.category = data["category"]
-				item_data.productCode = data["productcode"]
+				temp = {}
+				if item_data.name != data["name"]:
+					item_data.name = data["name"]
+					temp["name"] = data["name"]
+
+				if item_data.brand != data["brand"]:
+					item_data.brand = data["brand"]
+					temp["brand"] = data["brand"]
+
+				if item_data.category != data["category"]:
+					item_data.category = data["category"]
+					temp["category"] = data["category"]
+
 				session.add(item_data)
 				session.commit()
+
+				if temp != {} :
+
+					temp["productcode"] = data["productcode"]
+
+					changelog = Changelog( mode = "EDIT",
+										   user = "dummy",
+										   item_category = True,
+										   item_data = json.dumps(temp)
+										)
+					session.add(changelog)
+					session.flush()
+					session.commit()
+					logging.debug("Wrote activity log for editItem")
+
 				return True	
+		return False
 
 
 	def addVariantDB(self, data):
@@ -151,11 +175,14 @@ class Mysql():
 								   variants_category = True,
 								   item_data = json.dumps({"productcode" : data['itemid']}),
 								   variants_data = json.dumps({"variant_code" : var_code,
-										   					   "variant_name" : data['name']})
-					 			  )
+															   "variant_name" : data['name']})
+								  )
 			session.add(changelog)
 			session.flush()
 			session.commit()
+			logging.debug("Wrote activity log for addVariant")
+			return True
+		return False
 
 	def editVariantDB(self, data):
 		logging.info("editVariantDB")
@@ -165,6 +192,24 @@ class Mysql():
 			if variant_data == None:
 				return False
 			else:
+				temp = {}
+				if  variant_data.name != data["name"]:
+					 variant_data.name = data["name"]
+					 temp["name"] = data["name"]
+
+				print variant_data.sellingPrice, data["sellingprice"] 
+				if variant_data.sellingPrice != data["sellingprice"]:
+					variant_data.sellingPrice = data["sellingprice"]
+					temp["sellingprice"] = data["sellingprice"]
+
+				if variant_data.costPrice != data["costprice"]:
+					variant_data.costPrice = data["costprice"]
+					temp["costprice"] = data["costprice"]
+
+				if variant_data.quantity != data["quantity"]:
+					variant_data.quantity = data["quantity"]
+					temp["quantity"] = data["quantity"]
+
 				properties = json.loads(data['properties'])
 				variant_data.name = data["name"]
 				variant_data.sellingPrice = data["sellingprice"]
@@ -174,10 +219,29 @@ class Mysql():
 				session.add(variant_data)
 				session.flush()
 				session.commit()
+
 				session.query(Property).filter(Property.variant_code==variant_code).update({ "size":properties['size'],
 										"cloth": properties['cloth'] }, 
 										synchronize_session='fetch')
 				session.commit()
+
+				print temp
+				if temp != {}:
+	
+					temp["variant_code"] = variant_code
+					changelog = Changelog( mode = "EDIT",
+										   user = "dummy",
+										   item_category = True,
+										   variants_category = True,
+										   item_data = json.dumps({"productcode" : data['itemid']}),
+										   variants_data = json.dumps(temp)
+										  )
+					session.add(changelog)
+					session.flush()
+					session.commit()
+					logging.debug("Wrote activity log for editVariant")
+
+
 				return True     
 	
 
@@ -199,11 +263,12 @@ class Mysql():
 										   item_category = True,
 										   item_data = json.dumps({"productcode" : data['itemid']}),
 										   variants_data = json.dumps({"variant_code" : variant_code,
-										   							   "variant_name" : data['name']})
+																	   "variant_name" : data['name']})
 										   )
 					session.add(changelog)
 					session.flush()
 					session.commit()
+					logging.debug("Wrote activity log for delVariant")
 					return True
 
 

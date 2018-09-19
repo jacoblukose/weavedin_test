@@ -8,60 +8,83 @@ class Webserver():
 	Class implements web server functions. 
 	"""
 
-	def __init__(self, db):
-		self.ws_url = 'localhost'
+	def __init__(self, db, url):
+		self.ws_url = url
 		self.db = db
 		logging.info("Webserver Instance created")
 		return 
 		
 	def status_check(self):
-		return json.dumps({"Status": True})
+		js = json.dumps({"Status": "OK"})
+		resp = Response(js, status=200, mimetype='application/json')
+		return resp
 
 
-	def change_history(self, data):
+	def activity_log(self, data):
 		temp = {}
 		for key,val in data.iteritems():
 				temp[key] = val
 
-		result = self.db.changehistoryDB(temp)
+		result = self.db.activitylogDB(temp)
 		if result:
 			js = json.dumps(result)
 			resp = Response(js, status=200, mimetype='application/json')
 			return resp
+		else: 
+			js = json.dumps({"ACTIVITY_LOG": "FAILED"})
+			resp = Response(js, status=421, mimetype='application/json')
+			return resp
+
 
 	def add_item(self, data):
 		temp = {}
 		for key,val in data.iteritems():
 				temp[key] = val
-		self.db.addItemDB(temp)
-		return json.dumps({"edit_item": True})
+		if self.db.addItemDB(temp):
+			js = json.dumps({"ADD_ITEM": "SUCCESS"})
+			resp = Response(js, status=200, mimetype='application/json')
+			return resp
+
+
 
 	def edit_item(self, data):
 		temp = {}
 		for key,val in data.iteritems():
 				temp[key] = val
-		self.db.editItemDB(temp)
-		return json.dumps({"edit_item": True})
+		if self.db.editItemDB(temp):
+			js = json.dumps({"EDIT_ITEM": "SUCCESS"})
+			resp = Response(js, status=200, mimetype='application/json')
+			return resp
+
 
 	def edit_variant(self, data):
 		temp = {}
 		for key,val in data.iteritems():
 				temp[key] = val
-		self.db.editVariantDB(temp)
-		return json.dumps({"edit_variant": True})
+		if self.db.editVariantDB(temp):
+			js = json.dumps({"EDIT_VARIANT": "SUCCESS"})
+			resp = Response(js, status=200, mimetype='application/json')
+			return resp		
+
 
 	def add_variant(self, data):
 		temp = {}
 		for key,val in data.iteritems():
 				temp[key] = val
-		self.db.addVariantDB(temp)
-		return json.dumps({"add_variant": True})
+		if self.db.addVariantDB(temp):
+			js = json.dumps({"ADD_VARIANT": "SUCCESS"})
+			resp = Response(js, status=200, mimetype='application/json')
+			return resp	
+
 
 	def del_variant(self, data):
 		temp = {}
 		for key,val in data.iteritems():
 				temp[key] = val
-		self.db.delVariantDB(temp)
-		return json.dumps({"del_variant": True})
+		if self.db.delVariantDB(temp):
+			js = json.dumps({"DEL_VARIANT": "SUCCESS"})
+			resp = Response(js, status=200, mimetype='application/json')
+			return resp	
+
 
 

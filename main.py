@@ -47,9 +47,9 @@ class Initialise(object):
 		self.db = mysql(host, user, password, dbname)
 
 		#Initialise web server object
-		self.ws = ws(self.db)
+		ws_url = UtilityTools().KeylookUP(CONF["server"]["host"])
+		self.ws = ws(self.db, ws_url)
 
-		self.ws.ws_url = UtilityTools().KeylookUP(CONF["server"]["host"])
 
 
 
@@ -88,19 +88,19 @@ if __name__ == "__main__":
 		def status():
 			return chief.ws.status_check()
 		
-		@app.route('/api/v1/changehistory',methods=['POST'])
+		@app.route('/api/v1/changehistory',methods=['PUT'])
 		def change_history():
-			return chief.ws.change_history(request.form)
+			return chief.ws.activity_log(request.form)
 
 		@app.route('/api/v1/item/add',methods=['POST'])
 		def add_item():
 			return chief.ws.add_item(request.form)
 
-		@app.route('/api/v1/item/edit',methods=['POST'])
+		@app.route('/api/v1/item/edit',methods=['PUT'])
 		def edit_item():
 			return chief.ws.edit_item(request.form)
 
-		@app.route('/api/v1/variant/edit',methods=['POST'])
+		@app.route('/api/v1/variant/edit',methods=['PUT'])
 		def edit_variant():
 			return chief.ws.edit_variant(request.form)
 
