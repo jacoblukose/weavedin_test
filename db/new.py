@@ -1,12 +1,27 @@
-from sqlalchemy import *
-import logging
-from sqlalchemy.orm import Session
-from db import DatabaseConnection, DatabaseSession
-from entities import EntityConstructor, Item, Variant, Property
-from hashlib import md5
-from time import localtime
-from random import *
 import json 
+import logging
+import time
+from random import *
+from hashlib import md5
+from sqlalchemy import *
+from time import localtime
+from datetime import datetime
+from sqlalchemy.orm import Session
+
+
+from db import DatabaseConnection, DatabaseSession
+from entities import EntityConstructor, Item, Variant, Property, Changelog
+
+
+
+# def track_activity(func):
+#   """ Prints name of the function in which decorator is used. """
+#   print "inside track_activity"
+#   def details(*v, **k):
+#     logging.info("Running [" + func.__name__ + "()] function")
+#     return func(*v, **k)
+#   return details
+
 
 
 class Mysql(): 
@@ -33,18 +48,32 @@ class Mysql():
 		logging.info("DB schema created")
 		return 
 
-	def getdata(self):
-		result = self.engine.execute("select name from tablename")
-		for row in result:
-			print "name:", row['name']
-		result.close()
-
-
 	def changehistoryDB(self, data):
 		logging.info("changehistoryDB")
-		with DatabaseSession(self.engine) as session:
-			pass 
+		time_data = data['time']
+		current_time = time.strftime(r'%Y-%m-%d %H:%M:%S', 
+									time.localtime())
 
+		total = {}
+		print time, current_time
+		result = self.engine.execute("select * from changelog where created_date < %s" , current_time)
+		for index,row in enumerate(result):
+			result_data = {}
+			result_data["id"] = row[0]
+			result_data["mode"] = row[1]
+			result_data["created_date"] = row[2]
+			result_data["user"] = row[3]
+			result_data["item_category"] = row[4]
+			result_data["variants_category"] = row[5]
+			result_data["properties_category"] = row[6]
+			result_data["item_data"] = row[7]			
+			result_data["variants_data "] = row[8]	
+			result_data["properties_data"] = row[9]	
+
+			total[index] = result_data
+		result.close()
+		print total
+		return total
 
 	def addItemDB(self, data):
 		logging.info("addItemDB")
@@ -56,6 +85,15 @@ class Mysql():
 							 user = "dummy"
 							 )
 			session.add(instance)
+			session.flush()
+			session.commit()
+
+			changelog = Changelog( mode = "ADD",
+								   user = "dummy",
+								   item_category = True,
+								   item_data = json.dumps({"productcode" : data['productcode']})
+								   )
+			session.add(changelog)
 			session.flush()
 			session.commit()
 
@@ -106,6 +144,19 @@ class Mysql():
 			session.flush()
 			session.commit()
 
+
+			changelog = Changelog( mode = "ADD",
+								   user = "dummy",
+								   item_category = True,
+								   variants_category = True,
+								   item_data = json.dumps({"productcode" : data['itemid']}),
+								   variants_data = json.dumps({"variant_code" : var_code,
+										   					   "variant_name" : data['name']})
+					 			  )
+			session.add(changelog)
+			session.flush()
+			session.commit()
+
 	def editVariantDB(self, data):
 		logging.info("editVariantDB")
 		with DatabaseSession(self.engine) as session:
@@ -140,6 +191,18 @@ class Mysql():
 				else:
 					session.query(Property).filter(Property.variant_code==variant_code).delete(synchronize_session='fetch')
 					session.delete(variant_data)
+					session.commit()
+
+					changelog = Changelog( mode = "DEL",
+										   user = "dummy",
+										   variants_category = True,
+										   item_category = True,
+										   item_data = json.dumps({"productcode" : data['itemid']}),
+										   variants_data = json.dumps({"variant_code" : variant_code,
+										   							   "variant_name" : data['name']})
+										   )
+					session.add(changelog)
+					session.flush()
 					session.commit()
 					return True
 

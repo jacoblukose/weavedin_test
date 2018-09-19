@@ -1,5 +1,6 @@
 from flask import json
 import logging
+from flask import Response
 
 
 class Webserver():
@@ -17,27 +18,50 @@ class Webserver():
 		return json.dumps({"Status": True})
 
 
-	def change_history(self):
-		return json.dumps({"change_history": True})
+	def change_history(self, data):
+		temp = {}
+		for key,val in data.iteritems():
+				temp[key] = val
+
+		result = self.db.changehistoryDB(temp)
+		if result:
+			js = json.dumps(result)
+			resp = Response(js, status=200, mimetype='application/json')
+			return resp
 
 	def add_item(self, data):
-		self.db.addItemDB(data)
+		temp = {}
+		for key,val in data.iteritems():
+				temp[key] = val
+		self.db.addItemDB(temp)
 		return json.dumps({"edit_item": True})
 
 	def edit_item(self, data):
-		self.db.editItemDB(data)
+		temp = {}
+		for key,val in data.iteritems():
+				temp[key] = val
+		self.db.editItemDB(temp)
 		return json.dumps({"edit_item": True})
 
 	def edit_variant(self, data):
-		self.db.editVariantDB(data)
+		temp = {}
+		for key,val in data.iteritems():
+				temp[key] = val
+		self.db.editVariantDB(temp)
 		return json.dumps({"edit_variant": True})
 
 	def add_variant(self, data):
-		self.db.addVariantDB(data)
+		temp = {}
+		for key,val in data.iteritems():
+				temp[key] = val
+		self.db.addVariantDB(temp)
 		return json.dumps({"add_variant": True})
 
 	def del_variant(self, data):
-		self.db.delVariantDB(data)
+		temp = {}
+		for key,val in data.iteritems():
+				temp[key] = val
+		self.db.delVariantDB(temp)
 		return json.dumps({"del_variant": True})
 
 

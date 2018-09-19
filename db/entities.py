@@ -1,5 +1,5 @@
 from sqlalchemy import create_engine, MetaData, Table, Integer, String, \
-    Column,DateTime, ForeignKey, Numeric, Float
+    Column,DateTime, ForeignKey, Numeric, Float, Boolean
 from sqlalchemy.orm import relationship
 from sqlalchemy.ext.declarative import declarative_base
 from datetime import datetime
@@ -9,9 +9,6 @@ class EntityConstructor(object):
 
     def __init__(self, engine):
         self.engine = engine
-        # self.item = Item
-        # self.variant = Variant
-        # self.property = Property
 
 
     def create(self):
@@ -85,4 +82,33 @@ class Property(Base):
         variant = relationship("Variant", back_populates="properties")
 
 
-   
+class Changelog(Base):
+        __tablename__ = "changelog"
+
+        id = Column(Integer, primary_key = True)
+        
+        mode = Column(String(50),nullable = False)
+        created_date = Column(DateTime(), default=datetime.now)
+
+        user = Column(String(50),nullable = True)
+
+        item_category = Column(Boolean, default=False)
+        variants_category = Column(Boolean, default=False)
+        properties_category = Column(Boolean, default=False)
+
+        item_data = Column(String(500),nullable = True)
+        variants_data = Column(String(500),nullable = True)
+        properties_data = Column(String(500),nullable = True)
+
+
+
+
+
+
+
+
+
+
+
+
+

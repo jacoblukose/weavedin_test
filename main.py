@@ -2,11 +2,11 @@ import logging
 import signal 
 import sys
 from argparse import ArgumentParser
-from utility import UtilityTools 
 from flask import render_template,request,Flask,json
 
-from webserver.new import Webserver as ws 
+from utility import UtilityTools 
 from db.new import Mysql as mysql
+from webserver.new import Webserver as ws 
 
 class GracefulController(object):
 	"""
@@ -90,44 +90,27 @@ if __name__ == "__main__":
 		
 		@app.route('/api/v1/changehistory',methods=['POST'])
 		def change_history():
-			return chief.ws.change_history()
-
+			return chief.ws.change_history(request.form)
 
 		@app.route('/api/v1/item/add',methods=['POST'])
 		def add_item():
-			data = {}
-			for key,val in request.form.iteritems():
-				data[key] = val
-			return chief.ws.add_item(data)
-
+			return chief.ws.add_item(request.form)
 
 		@app.route('/api/v1/item/edit',methods=['POST'])
 		def edit_item():
-			data = {}
-			for key,val in request.form.iteritems():
-				data[key] = val
-			return chief.ws.edit_item(data)
+			return chief.ws.edit_item(request.form)
 
 		@app.route('/api/v1/variant/edit',methods=['POST'])
 		def edit_variant():
-			data = {}
-			for key,val in request.form.iteritems():
-				data[key] = val
-			return chief.ws.edit_variant(data)
+			return chief.ws.edit_variant(request.form)
 
 		@app.route('/api/v1/variant/add',methods=['POST'])
 		def add_variant():
-			data = {}
-			for key,val in request.form.iteritems():
-				data[key] = val
-			return chief.ws.add_variant(data)
+			return chief.ws.add_variant(request.form)
 
 		@app.route('/api/v1/variant/del',methods=['POST'])
 		def del_variant():
-			data = {}
-			for key,val in request.form.iteritems():
-				data[key] = val
-			return chief.ws.del_variant(data)
+			return chief.ws.del_variant(request.form)
 
 		app.debug = False
 		app.run(host=chief.ws.ws_url, threaded=True)
