@@ -6,6 +6,14 @@ from flask import Response
 class Webserver():
 	"""
 	Class implements web server functions. 
+
+	200 OK
+	
+	409 Conflict - if server will not process request, 
+	but reason for that is not client's fault
+
+	400 Bad Request - when server will not process 
+	request because it's obvious client fault
 	"""
 
 	def __init__(self, db, url):
@@ -49,7 +57,6 @@ class Webserver():
 			js = json.dumps({"ADD_ITEM": "ITEM ALREADY EXISTS"})
 			resp = Response(js, status=409, mimetype='application/json')
 			return resp
-
 
 
 
@@ -104,6 +111,7 @@ class Webserver():
 			js = json.dumps({"DEL_VARIANT": "VARIANT ALREADY DELETED"})
 			resp = Response(js, status=409, mimetype='application/json')
 			return resp	
+
 
 
 
